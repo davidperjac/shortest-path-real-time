@@ -1,8 +1,8 @@
+from timeit import repeat
 import matplotlib.pyplot as plt
 from collections import deque
 import networkx as nx
 import time 
-
 import numpy as np
 from matplotlib import animation, rc
 from IPython.display import HTML
@@ -78,7 +78,7 @@ class Graph:
 
                 reconst_path.reverse()
 
-                print('Path found: {}'.format(reconst_path))
+                # print('Path found: {}'.format(reconst_path))
                 return reconst_path
 
             # for all neighbors of the current node do
@@ -120,101 +120,60 @@ adjac_lis = {
 }
 
 graph1 = Graph(adjac_lis)
-graph1.a_star_algorithm('A', 'F')
 
 def state_to_color(s):
-  if s==0:
-    return [0.9,0.9,0.9] #unvisited
-  if s==1:
-    return [0.5,0.5,1] #visited
-  return [1,0.5,0.5] #visiting
+    if s==0:
+        return [0.9,0.9,0.9] #unvisited
+    if s==1:
+        return [0.5,0.5,1] #visited
+    return [1,0.5,0.5] #visiting
 
 def update(t, n, nodes, order, visited):
-  nc = [[0.9,0.9,0.9]]*n #node color
-  for i in range(n):
-    nc[i] = state_to_color(0)
-    if i==order[t]:
-      nc[i] = state_to_color(2)
-    elif visited[i]:
-      nc[i] = state_to_color(1)
-  visited[order[t]]=True  
-  nodes.set_color(nc)
-  return nodes,
+    nc = [[0.9,0.9,0.9]]*n #node color
+    for i in range(len(order)):
+        nc[i] = state_to_color(0)
+        if i==order[i]:
+            nc[i] = state_to_color(2)
+        elif visited[i]:
+            nc[i] = state_to_color(1)
+    visited[t]=True  
+    nodes.set_color(nc)
+    return nodes,
 
-def make_adj_list(G): #NetworkXのグラフを隣接リストに変換
-  adj_list = []
-  for (u,dct) in G.adjacency():
-    tmp = []
-    for d in dct:
-      tmp.append(d)
-    adj_list.append(tmp)
-  return adj_list
-  
-def make_adj_matrix(G): #NetworkXのグラフを隣接行列に変換
-  n=G.number_of_nodes()
-  adj_matrix = [[0]*n for _ in range(n)]
-
-  for (u,dct) in G.adjacency():
-    for d in dct:
-      adj_matrix[u][d]=1
-  return adj_matrix
-
-def dfs_order(G):
-  N = make_adj_list(G)
-  order = []
-  visited = [False]*G.number_of_nodes()
-
-  def dfs(v): # 関数内関数でdfsを定義しています.
-    visited[v]=True
-    order.append(v)
-    for w in N[v]:
-      if visited[w]==False:
-        dfs(w)
-        order.append(v)
-
-  v0 = 0 # initial position
-  dfs(v0)
-  return order
-
-
-H = nx.random_tree(20)
-G = nx.convert_node_labels_to_integers(H)
+G = nx.Graph()
+G.add_nodes_from(['A','B','C','D','E','F'])
+G.add_edge('A','B',weight= 10)
+G.add_edge('A','C',weight= 12)
+G.add_edge('A','D',weight= 5)
+G.add_edge('B','A',weight= 10)
+G.add_edge('B','E',weight= 11)
+G.add_edge('C','A',weight= 12)
+G.add_edge('C','D',weight= 6)
+G.add_edge('C','E',weight= 11)
+G.add_edge('D','A',weight= 5)
+G.add_edge('D','C',weight= 6)
+G.add_edge('D','F',weight= 14)
+G.add_edge('E','B',weight= 11)
+G.add_edge('E','C',weight= 11)
+G.add_edge('F','B',weight= 11)
+G.add_edge('F','D',weight= 14)
 
 n = G.number_of_nodes()
-#pos=nx.spring_layout(G) #node position
-pos=nx.planar_layout(G)
+pos=nx.spring_layout(G)
+
 nc = [[0.9,0.9,0.9]]*n #node color
 fig=plt.figure(figsize=(7,7))
 
 nodes = nx.draw_networkx_nodes(G,pos,node_color=nc,node_size=400) #layout of nodes
 edges = nx.draw_networkx_edges(G,pos) #layout of edges
-labels = {}
-for i in range(n):
-  labels[i] = r"$"+str(i)+"$"
-nx.draw_networkx_labels(G, pos, labels, font_size=12)
 
-order = dfs_order(G)
-#order = bfs_order(G)
+nx.draw(G,pos,with_labels=True, font_weight='bold')
+labels = nx.get_edge_attributes(G,'weight')
+nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
+
+order = graph1.a_star_algorithm('A', 'F')
 visited = [False]*n
 
-anim = FuncAnimation(fig, update, fargs = (n, nodes, order, visited), interval=400, save_count=len(order), blit=True)
+anim = FuncAnimation(fig, update, fargs = (n, nodes, order, visited), interval=400,frames=len(order) ,save_count=len(order), blit=True ,repeat=True)
 plt.show()
-# rc('animation', html='jshtml')
-# #anim.save('dfs.mp4', writer="ffmpeg")
-# anim
 
-
-# G = nx.Graph()
-# G.add_nodes_from(['A','B','C','D','E','F']);
-# G.add_edge('A','B',weight= 8);
-# G.add_edge('A','C',weight= 10);
-# G.add_edge('D','B',weight= 6);
-# G.add_edge('F','D',weight= 2);
-# G.add_edge('C','E',weight= 12);
-
-# pos=nx.spring_layout(G);
-
-# nx.draw(G,pos,with_labels=True, font_weight='bold')
-# labels = nx.get_edge_attributes(G,'weight')
-# nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
-# plt.show()  
