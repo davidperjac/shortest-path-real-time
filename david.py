@@ -1,10 +1,7 @@
-from timeit import repeat
 import matplotlib.pyplot as plt
 from collections import deque
 import networkx as nx
 import time 
-import numpy as np
-from matplotlib import animation, rc
 from IPython.display import HTML
 from matplotlib.animation import FuncAnimation
 
@@ -120,6 +117,7 @@ adjac_lis = {
 }
 
 graph1 = Graph(adjac_lis)
+contF = 0
 
 def state_to_color(s):
     if s==0:
@@ -129,14 +127,18 @@ def state_to_color(s):
     return [1,0.5,0.5] #visiting
 
 def update(t, n, nodes, order, visited):
-    nc = [[0.9,0.9,0.9]]*n #node color
-    for i in range(len(order)):
-        nc[i] = state_to_color(0)
-        if i==order[i]:
-            nc[i] = state_to_color(2)
-        elif visited[i]:
-            nc[i] = state_to_color(1)
-    visited[t]=True  
+    print(order)
+    print(visited)
+    print(t)
+    nc = [[0.9,0.9,0.9]]*n
+    for i in range(n) : 
+        for node in G: 
+            if (order[t] == node ) :
+                nc[list(G.nodes).index(node)] = state_to_color(2)
+                visited[list(G.nodes).index(node)] = True
+                break
+            elif visited[i]:
+                nc[i] = state_to_color(2)
     nodes.set_color(nc)
     return nodes,
 
@@ -145,35 +147,29 @@ G.add_nodes_from(['A','B','C','D','E','F'])
 G.add_edge('A','B',weight= 10)
 G.add_edge('A','C',weight= 12)
 G.add_edge('A','D',weight= 5)
-G.add_edge('B','A',weight= 10)
 G.add_edge('B','E',weight= 11)
-G.add_edge('C','A',weight= 12)
 G.add_edge('C','D',weight= 6)
 G.add_edge('C','E',weight= 11)
-G.add_edge('D','A',weight= 5)
-G.add_edge('D','C',weight= 6)
+G.add_edge('C','F',weight= 8)
 G.add_edge('D','F',weight= 14)
-G.add_edge('E','B',weight= 11)
-G.add_edge('E','C',weight= 11)
-G.add_edge('F','B',weight= 11)
-G.add_edge('F','D',weight= 14)
 
-n = G.number_of_nodes()
-pos=nx.spring_layout(G)
+total_nodes = G.number_of_nodes()
+pos=nx.planar_layout(G)
 
-nc = [[0.9,0.9,0.9]]*n #node color
+node_color = [[0.9,0.9,0.9]]*total_nodes 
 fig=plt.figure(figsize=(7,7))
 
-nodes = nx.draw_networkx_nodes(G,pos,node_color=nc,node_size=400) #layout of nodes
-edges = nx.draw_networkx_edges(G,pos) #layout of edges
+nodes = nx.draw_networkx_nodes(G,pos,node_color=node_color,node_size=400) 
+edges = nx.draw_networkx_edges(G,pos,edge_color="tab:blue") 
+weights = list( map( lambda x: x/2 , nx.get_edge_attributes(G,'weight').values() ) )
 
-nx.draw(G,pos,with_labels=True, font_weight='bold')
+nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="white",width=weights, node_color='black')
 labels = nx.get_edge_attributes(G,'weight')
-nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
+nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
 
 order = graph1.a_star_algorithm('A', 'F')
-visited = [False]*n
+visited = [False]*total_nodes
 
-anim = FuncAnimation(fig, update, fargs = (n, nodes, order, visited), interval=400,frames=len(order) ,save_count=len(order), blit=True ,repeat=True)
+anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited), interval=400,frames=len(order),repeat=False)
 plt.show()
 
