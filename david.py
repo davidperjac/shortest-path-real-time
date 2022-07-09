@@ -88,7 +88,7 @@ class Graph:
 def state_to_color():
     return [1,0.5,0.5] #visiting
 
-def update(t, n, nodes, order, visited,G):
+def update(t, n, nodes, order, visited,G, edges):
     nc = [[0.9,0.9,0.9]]*n
     for i in range(n) : 
         for node in G: 
@@ -114,7 +114,7 @@ def draw(G,pos,weights) :
     labels = nx.get_edge_attributes(G,'weight')
     nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
 
-def animateGraph (graph,start_node,final_node) :
+def animateGraph (graph,order) :
     visualGraph = createVisualGraph(graph)
 
     total_nodes = visualGraph.number_of_nodes()
@@ -124,14 +124,13 @@ def animateGraph (graph,start_node,final_node) :
     fig=plt.figure(figsize=(7,7))
 
     nodes = nx.draw_networkx_nodes(visualGraph,pos,node_color=node_color,node_size=400) 
+    edges = nx.draw_networkx_edges(visualGraph,pos)
     weights = list( map( lambda x: x/2 , nx.get_edge_attributes(visualGraph,'weight').values() ) )
 
     draw(visualGraph,pos,weights)
-
-    order = graph.a_star_algorithm(start_node,final_node)
     visited = [False]*total_nodes
 
-    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph), interval=400,frames=len(order),repeat=False)
+    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,edges), interval=400,frames=len(order),repeat=False)
     FFwriter = animation.FFMpegWriter()
     anim.save('../star'+str(rd.randint(1,50))+'.mp4', writer=FFwriter,dpi=300)
     plt.close()
@@ -157,10 +156,9 @@ def randomEvent (graph) :
 def realTime (graph,start_node,final_node) :
     order = graph.a_star_algorithm(start_node,final_node)
     previousOrder = []
-    animateGraph(graph,start_node,final_node)
-    print('ANTIGUO ORDEN = '+' '.join(order))
-    time.sleep(5)
+    animateGraph(graph,order)
     affectedNodes = randomEvent(graph)
+    print('ANTIGUO ORDEN = '+' '.join(order))
     print('NODO Y ARCO AFECTADO = '+affectedNodes[0]+ ' - ' + affectedNodes[1])
     for i in range(len(order)):
         if i < len(order)-1 :
@@ -170,7 +168,13 @@ def realTime (graph,start_node,final_node) :
                 print('NUEVO ORDEN'+' = '+' '.join(previousOrder[0:i]) + ' ' +  ' '.join(order))
     if len(previousOrder) == 0: 
         print('NO HUBO CAMBIOS EN LA RUTA')
-    animateGraph(graph,order[0],order[len(order)-1])
+
+def compareGraphs(g1,g2):
+    for node,edges in g1.adjacency_list.items():
+        for i in range(len(edges)):
+            if g1.adjacency_list[node][i] != g2.adjacency_list[node][i]:
+                return False
+    return True
 
 # VARIABLES
 
@@ -184,14 +188,10 @@ adjac_list = {
 }
 
 graph = Graph(adjac_list)
-
 start_node = 'B'
 final_node = 'F'
 
 realTime(graph,start_node,final_node)
 
-
-# animateGraph(graph,start_node,final_node)
-# randomEvent(graph)
 # time.sleep(5)
 # animateGraph(graph,start_node,final_node)
