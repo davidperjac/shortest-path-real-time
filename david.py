@@ -83,13 +83,9 @@ class Graph:
         print('Path does not exist!')
         return None
 
-#FUNCTIONS
+#ANIMATE FUNCTIONS
 
-def state_to_color(s):
-    if s==0:
-        return [0.9,0.9,0.9] #unvisited
-    if s==1:
-        return [0.5,0.5,1] #visited
+def state_to_color():
     return [1,0.5,0.5] #visiting
 
 def update(t, n, nodes, order, visited,G):
@@ -97,10 +93,10 @@ def update(t, n, nodes, order, visited,G):
     for i in range(n) : 
         for node in G: 
             if (order[t] == node ) :
-                nc[list(G.nodes).index(node)] = state_to_color(2)
+                nc[list(G.nodes).index(node)] = state_to_color()
                 visited[list(G.nodes).index(node)] = True
             elif visited[i]:
-                nc[i] = state_to_color(2)
+                nc[i] = state_to_color()
     nodes.set_color(nc)
     return nodes
 
@@ -111,33 +107,36 @@ def createVisualGraph(graph) :
     for node,edges in adjacency_list.items():
         for edge in edges: 
             G.add_edge(node,edge[0],weight=edge[1])
-
     return G
 
-def animateGraph (graph) :
-    G = createVisualGraph(graph)
-
-    total_nodes = G.number_of_nodes()
-    pos=nx.spring_layout(G)
-
-    node_color = [[0.9,0.9,0.9]]*total_nodes 
-    fig=plt.figure(figsize=(7,7))
-
-    nodes = nx.draw_networkx_nodes(G,pos,node_color=node_color,node_size=400) 
-    weights = list( map( lambda x: x/2 , nx.get_edge_attributes(G,'weight').values() ) )
-
+def draw(G,pos,weights) :
     nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="white",width=weights, node_color='black', node_size=250)
     labels = nx.get_edge_attributes(G,'weight')
     nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
 
-    order = graph.a_star_algorithm('B', 'F')
+def animateGraph (graph,start_node,final_node) :
+    visualGraph = createVisualGraph(graph)
+
+    total_nodes = visualGraph.number_of_nodes()
+    pos=nx.spring_layout(visualGraph)
+
+    node_color = [[0.9,0.9,0.9]]*total_nodes 
+    fig=plt.figure(figsize=(7,7))
+
+    nodes = nx.draw_networkx_nodes(visualGraph,pos,node_color=node_color,node_size=400) 
+    weights = list( map( lambda x: x/2 , nx.get_edge_attributes(visualGraph,'weight').values() ) )
+
+    draw(visualGraph,pos,weights)
+
+    order = graph.a_star_algorithm(start_node,final_node)
     visited = [False]*total_nodes
 
-    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,G), interval=400,frames=len(order),repeat=False)
-
+    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph), interval=400,frames=len(order),repeat=False)
     FFwriter = animation.FFMpegWriter()
     anim.save('../star'+str(rd.randint(1,50))+'.mp4', writer=FFwriter,dpi=300)
     plt.close()
+
+#ALGORITHM FUNCTIONS
 
 def randomEvent (graph) :
     adj_list = graph.adjacency_list
@@ -147,11 +146,31 @@ def randomEvent (graph) :
     obstruccion = rd.randint(50,100)
     randomEdge = rd.randint(0, len(graph.adjacency_list[randomNode]) - 1)
     
-    node,value = graph.adjacency_list[randomNode][randomEdge]
-    graph.adjacency_list[randomNode][randomEdge] = (node,obstruccion)
-    for edge in graph.adjacency_list[node]:
+    edgeNode,value = graph.adjacency_list[randomNode][randomEdge]
+    graph.adjacency_list[randomNode][randomEdge] = (edgeNode,obstruccion)
+    for edge in graph.adjacency_list[edgeNode]:
         if (edge[0] == randomNode):
-            graph.adjacency_list[node][graph.adjacency_list[node].index(edge)] = (randomNode,obstruccion)
+            graph.adjacency_list[edgeNode][graph.adjacency_list[edgeNode].index(edge)] = (randomNode,obstruccion)
+    return [randomNode,edgeNode]
+
+
+def realTime (graph,start_node,final_node) :
+    order = graph.a_star_algorithm(start_node,final_node)
+    previousOrder = []
+    animateGraph(graph,start_node,final_node)
+    print('ANTIGUO ORDEN = '+' '.join(order))
+    time.sleep(5)
+    affectedNodes = randomEvent(graph)
+    print('NODO Y ARCO AFECTADO = '+affectedNodes[0]+ ' - ' + affectedNodes[1])
+    for i in range(len(order)):
+        if i < len(order)-1 :
+            if (order[i+1] == affectedNodes[0] and affectedNodes[1] in order) or (order[i] == affectedNodes[0] and affectedNodes[1] in order):
+                previousOrder = order
+                order = graph.a_star_algorithm(order[i],final_node)
+                print('NUEVO ORDEN'+' = '+' '.join(previousOrder[0:i]) + ' ' +  ' '.join(order))
+    if len(previousOrder) == 0: 
+        print('NO HUBO CAMBIOS EN LA RUTA')
+    animateGraph(graph,order[0],order[len(order)-1])
 
 # VARIABLES
 
@@ -166,7 +185,13 @@ adjac_list = {
 
 graph = Graph(adjac_list)
 
-animateGraph(graph)
-randomEvent(graph)
-time.sleep(5)
-animateGraph(graph)
+start_node = 'B'
+final_node = 'F'
+
+realTime(graph,start_node,final_node)
+
+
+# animateGraph(graph,start_node,final_node)
+# randomEvent(graph)
+# time.sleep(5)
+# animateGraph(graph,start_node,final_node)
