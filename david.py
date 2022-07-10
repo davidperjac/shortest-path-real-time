@@ -88,15 +88,23 @@ class Graph:
 def state_to_color():
     return [1,0.5,0.5] #visiting
 
-def update(t, n, nodes, order, visited,G, edges):
+def update(t, n, nodes, order, visited,G,pos,weights):
     nc = [[0.9,0.9,0.9]]*n
     for i in range(n) : 
         for node in G: 
             if (order[t] == node ) :
                 nc[list(G.nodes).index(node)] = state_to_color()
                 visited[list(G.nodes).index(node)] = True
+                if t  != len(order) - 1: 
+                    G[node][order[t+1]]['weight']+=50
+                    if t != 0:
+                        draw(G,pos,weights)
             elif visited[i]:
                 nc[i] = state_to_color()
+                print(node+' - '+str(G[node]))
+                print(t)
+                print(len(order))
+                print('\n')
     nodes.set_color(nc)
     return nodes
 
@@ -124,13 +132,12 @@ def animateGraph (graph,order) :
     fig=plt.figure(figsize=(7,7))
 
     nodes = nx.draw_networkx_nodes(visualGraph,pos,node_color=node_color,node_size=400) 
-    edges = nx.draw_networkx_edges(visualGraph,pos)
     weights = list( map( lambda x: x/2 , nx.get_edge_attributes(visualGraph,'weight').values() ) )
 
     draw(visualGraph,pos,weights)
     visited = [False]*total_nodes
 
-    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,edges), interval=400,frames=len(order),repeat=False)
+    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,pos,weights), interval=400,frames=len(order),repeat=False)
     FFwriter = animation.FFMpegWriter()
     anim.save('../star'+str(rd.randint(1,50))+'.mp4', writer=FFwriter,dpi=300)
     plt.close()
