@@ -88,7 +88,7 @@ class Graph:
 def state_to_color():
     return [1,0.5,0.5] #visiting
 
-def update(t, n, nodes, order, visited,G,pos,weights):
+def update(t, n, nodes, order, visited,G,pos):
     nc = [[0.9,0.9,0.9]]*n
     for i in range(n) : 
         for node in G: 
@@ -96,15 +96,16 @@ def update(t, n, nodes, order, visited,G,pos,weights):
                 nc[list(G.nodes).index(node)] = state_to_color()
                 visited[list(G.nodes).index(node)] = True
                 if t  != len(order) - 1: 
-                    G[node][order[t+1]]['weight']+=50
+                    G[node][order[t+1]]['weight']+=20
+                    G[node][order[t+1]]['color']='red'
                     if t != 0:
-                        draw(G,pos,weights)
+                        weights = list( map( lambda x: x/2 , nx.get_edge_attributes(G,'weight').values() ) )
+                        colors = nx.get_edge_attributes(G,'color').values()
+                        labels = nx.get_edge_attributes(G,'weight')
+                        nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="white",width=weights, node_color='black', node_size=250,edge_color=colors)
+                        nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
             elif visited[i]:
                 nc[i] = state_to_color()
-                print(node+' - '+str(G[node]))
-                print(t)
-                print(len(order))
-                print('\n')
     nodes.set_color(nc)
     return nodes
 
@@ -114,7 +115,7 @@ def createVisualGraph(graph) :
     G.add_nodes_from(list(adjacency_list.keys()))
     for node,edges in adjacency_list.items():
         for edge in edges: 
-            G.add_edge(node,edge[0],weight=edge[1])
+            G.add_edge(node,edge[0],weight=edge[1],color='black')
     return G
 
 def draw(G,pos,weights) :
@@ -122,7 +123,7 @@ def draw(G,pos,weights) :
     labels = nx.get_edge_attributes(G,'weight')
     nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
 
-def animateGraph (graph,order) :
+def animateGraph (graph,order,obstruccion,affectedNode) :
     visualGraph = createVisualGraph(graph)
 
     total_nodes = visualGraph.number_of_nodes()
@@ -137,7 +138,7 @@ def animateGraph (graph,order) :
     draw(visualGraph,pos,weights)
     visited = [False]*total_nodes
 
-    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,pos,weights), interval=400,frames=len(order),repeat=False)
+    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,pos,obstruccion,affectedNode), interval=400,frames=len(order),repeat=False)
     FFwriter = animation.FFMpegWriter()
     anim.save('../star'+str(rd.randint(1,50))+'.mp4', writer=FFwriter,dpi=300)
     plt.close()
@@ -152,7 +153,9 @@ def randomEvent (graph) :
     obstruccion = rd.randint(50,100)
     randomEdge = rd.randint(0, len(graph.adjacency_list[randomNode]) - 1)
     
+
     edgeNode,value = graph.adjacency_list[randomNode][randomEdge]
+    print('NODO AFECTADO Y ARCO AFECTADO - '+randomNode,edgeNode)
     graph.adjacency_list[randomNode][randomEdge] = (edgeNode,obstruccion)
     for edge in graph.adjacency_list[edgeNode]:
         if (edge[0] == randomNode):
@@ -176,12 +179,39 @@ def realTime (graph,start_node,final_node) :
     if len(previousOrder) == 0: 
         print('NO HUBO CAMBIOS EN LA RUTA')
 
-def compareGraphs(g1,g2):
-    for node,edges in g1.adjacency_list.items():
-        for i in range(len(edges)):
-            if g1.adjacency_list[node][i] != g2.adjacency_list[node][i]:
-                return False
-    return True
+def fastestContinuousRoute(graph,start_node,final_node) :
+    continuousRoute = []
+    here = start_node
+    while (here != final_node) :
+        route = graph.a_star_algorithm(here,final_node)
+        isNewSample = False
+        while (isNewSample == False and here != final_node):
+            continuousRoute.append(here)
+            next = getNext(here,route)
+            weight = getPathWeight(graph,here,next)
+            if rd.randint(1,3) == 2:
+                affectedNodes = randomEvent(graph)
+                if affectedNodes[0] in route and affectedNodes[1] in route:
+                    isNewSample = True  
+                    here = next
+                    break
+            here = next
+        if here == final_node:
+            continuousRoute.append(here)
+    return continuousRoute
+
+def getNext(current,route):
+    if (current == route[len(route)-1]):
+        return current
+    else:
+        return route[route.index(current)+1]
+
+def getPathWeight(graph,start_node,final_node):
+    adjacency_list = graph.adjacency_list
+    for node,edges in adjacency_list.items():
+        for edge in edges: 
+            if node == start_node and edge[0] == final_node:
+                return adjacency_list[node][adjacency_list[node].index(edge)][1]
 
 # VARIABLES
 
@@ -198,7 +228,9 @@ graph = Graph(adjac_list)
 start_node = 'B'
 final_node = 'F'
 
-realTime(graph,start_node,final_node)
+print(fastestContinuousRoute(graph,start_node,final_node))
+
+# realTime(graph,start_node,final_node)
 
 # time.sleep(5)
 # animateGraph(graph,start_node,final_node)
