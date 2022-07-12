@@ -15,11 +15,12 @@ class Graph:
     def h(self, n):
         H = {
             'ESPOL': 1,
-            'B': 1,
-            'C': 1,
-            'D': 1,
-            'E': 1,
-            'F': 1,
+            'PORTETE':1,
+            'CEIBOS': 1,
+            'URDESA': 1,
+            'CENTRO': 1,
+            'POLICENTRO': 1,
+            'PUERTO SANTA ANA': 1,
         }
         return H[n]
 
@@ -100,8 +101,8 @@ def update(t, n, nodes, order, visited,G,pos):
                     if t != 0:
                         colors = nx.get_edge_attributes(G,'color').values()
                         labels = nx.get_edge_attributes(G,'weight')
-                        nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="black",node_color='blue', node_size=250,edge_color=colors)
-                        nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
+                        nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="black",node_color='white',edge_color=colors)
+                        nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=18,with_labels = True)
             elif visited[i]:
                 nc[i] = state_to_color()
     nodes.set_color(nc)
@@ -117,9 +118,9 @@ def createVisualGraph(graph) :
     return G
 
 def draw(G,pos,weights) :
-    nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="black",width=weights, node_color='blue', node_size=250)
+    nx.draw(G,pos,with_labels=True, font_weight='bold',font_color="black",width=weights, node_color='white')
     labels = nx.get_edge_attributes(G,'weight')
-    nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=15,with_labels = True)
+    nx.draw_networkx_edge_labels(G,pos,edge_labels=labels,font_size=18,with_labels = True)
 
 def animateGraph (graph,order) :
     visualGraph = createVisualGraph(graph)
@@ -128,15 +129,17 @@ def animateGraph (graph,order) :
     pos=nx.spring_layout(visualGraph)
 
     node_color = [[0.9,0.9,0.9]]*total_nodes 
-    fig=plt.figure(figsize=(7,7))
+    fig=plt.figure(figsize=(12,12))
 
-    nodes = nx.draw_networkx_nodes(visualGraph,pos,node_color=node_color,node_size=1200) 
+    nodes = nx.draw_networkx_nodes(visualGraph,pos,node_color=node_color,node_size=1100) 
     weights = list( map( lambda x: x/2 , nx.get_edge_attributes(visualGraph,'weight').values() ) )
 
     draw(visualGraph,pos,weights)
     visited = [False]*total_nodes
 
-    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,pos), interval=400,frames=len(order),repeat=False)
+    # plt.savefig('../figura.png')
+    
+    anim = FuncAnimation(fig, update, fargs = (total_nodes, nodes, order, visited,visualGraph,pos), interval=500,frames=len(order),repeat=False)
     FFwriter = animation.FFMpegWriter()
     anim.save('../star'+str(rd.randint(1,50))+'.mp4', writer=FFwriter,dpi=300)
     plt.close()
@@ -158,7 +161,6 @@ def randomEvent (graph) :
         if (edge[0] == randomNode):
             graph.adjacency_list[edgeNode][graph.adjacency_list[edgeNode].index(edge)] = (randomNode,obstruccion)
     return [randomNode,edgeNode]
-
 
 def realTime (graph,start_node,final_node) :
     order = graph.a_star_algorithm(start_node,final_node)
@@ -194,7 +196,7 @@ def fastestContinuousRoute(graph,start_node,final_node) :
             here = next
         if here == final_node:
             continuousRoute.append(here)
-    return continuousRoute
+    animateGraph(graph,continuousRoute);
 
 def getNext(current,route):
     if (current == route[len(route)-1]):
@@ -212,18 +214,22 @@ def getPathWeight(graph,start_node,final_node):
 # VARIABLES
 
 adjac_list = {
-    'ESPOL': [('B', 10), ('C', 12), ('D', 5)],
-    'B': [('ESPOL', 10), ('E',11)],
-    'C': [('ESPOL', 12), ('D', 6),('E', 11),('F',8)],
-    'D': [('ESPOL',5), ('C',6),('F',14)],
-    'E': [('B',11), ('C',11)],
-    'F': [('C',8), ('D',14)]
+    'ESPOL': [('PORTETE', 10), ('CEIBOS', 5)],
+    'PORTETE': [('CENTRO', 15), ('PUERTO SANTA ANA',20), ('ESPOL',10)],
+    'CEIBOS': [('URDESA',5), ('CENTRO',15), ('ESPOL',5)],
+    'URDESA': [('POLICENTRO', 10), ('CEIBOS',5,), ('CENTRO',12)],
+    'CENTRO': [('POLICENTRO',8),('PUERTO SANTA ANA',5), ('PORTETE',15), ('CEIBOS',15), ('URDESA',12)],
+    'POLICENTRO': [('URDESA', 10), ('CENTRO', 8), ('PUERTO SANTA ANA',12)],
+    'PUERTO SANTA ANA': [('POLICENTRO',12), ('CENTRO',5) , ('PORTETE',20)]
 }
 
 graph = Graph(adjac_list)
-start_node = 'B'
-final_node = 'F'
+start_node = 'ESPOL'
+final_node = 'PUERTO SANTA ANA'
+
+fastestContinuousRoute(graph,start_node,final_node)
+
 
 # print(fastestContinuousRoute(graph,start_node,final_node))
-realTime(graph,start_node,final_node)
+# realTime(graph,start_node,final_node)
 
