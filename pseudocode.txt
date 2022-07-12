@@ -1,0 +1,80 @@
+A* ALGORITHM (G, start, end):
+1.    S = Ø  
+2.    Q = Ø  
+3.    g = {}            
+4.    g[start] = 0     
+5.    parents = {}      
+6.    parents[start] = start
+7.    while |S| > 0
+8.        n = Ø
+9.        for each v in S
+10.           if n == Ø OR g[v] + HEURISTIC(G, v) < g[n] + HEURISTIC(G, n)
+11.               n = v;
+12.       if n == Ø
+13.           return Ø
+14.       if n == end
+15.           path = Ø
+16.           while parents[n] != n
+17.               PATH ADD(n)
+18.               n = parents[n]
+19.           path ADD(start)
+20.           REVERSE path
+21.           return path
+22.       for m, weight in NEIGHBORS(G, n)
+23.           if m ∉ S and m ∉ Q 
+24.               S ADD(m)
+25.               parents[m] = n
+26.               g[m] = g[n] + weight
+27.           else
+28.               if g[m] > g[n] + weight
+29.                   g[m] = g[n] + weight
+30.                   parents[m] = n
+31.                   if m in Q
+32.                       Q REMOVE(m)
+33.                       S ADD(m)
+34.       S REMOVE(n)
+35.       Q ADD(n)
+36.   return Ø
+
+
+RANDOM OBSTACLE (G):
+1.    v = GET RANDOM VERTEX(G)
+2.    camino = GET RANDOM VERTEX ADJACENT(G, v)
+3.    v SET WEIGHT(camino, ∞)
+4.    camino SET WEIGHT(∞, camino)
+5.    return v, camino
+
+
+SHORTEST-PATH-REAL-TIME (G, start, end):
+1.    route = Ø
+2.    current = start
+3.    while current != end
+4.        path = A* ALGORITHM (G, current, end)
+5.        isNewSample = FALSE
+6.        while isNewSample == False and current != end
+7.            route ADD(current)
+8.            next = path POP(current)
+9.            if BLOCK_GENERATED
+10.               b1, b2 = RANDOM OBSTACLE(G)
+11.               if b1 in route and b2 in route:
+12.                   isNewSample = TRUE
+13.                   current = next               
+14.           current = next
+15.       if here == end:
+16.           route ADD(current)
+17.   return route
+
+
+
+SHORTEST-PATH-REAL-TIME (G, start, end):
+1.     path = A* ALGORITHM(G,start,end)
+2.     route = Ø
+3.     while |path| > 0:
+4.        element = path POP_FIRST_ELEMENT
+5.        route ADD(element)
+6.        if BLOCK_GENERATED:
+7.            b1, b2 = RANDOM OBSTACLE(G)
+8.            if b1 in path and b2 in path:
+9.                path = A* ALGORITHM(G, path GET_FIRST_ELEMENT, end)
+10.       if element == end:
+11.           return route
